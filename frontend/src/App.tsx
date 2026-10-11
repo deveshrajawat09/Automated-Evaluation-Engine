@@ -20,7 +20,7 @@ type Submission = {
   score: number | null
   risk: number | null
 }
-type Team = { id: string; name: string; hackathon_id: string }
+type Team = { id: string; name: string; description?: string; hackathon_id: string; invite_code?: string }
 type LeaderboardEntry = {
   rank: number
   team: string
@@ -91,7 +91,11 @@ const App = () => {
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ name: '', description: '', start_date: '', end_date: '', registration_deadline: '' })
   const [showSubmit, setShowSubmit] = useState(false)
-  const [submissionForm, setSubmissionForm] = useState({ hackathon_id: '', team_id: '', project_name: '', project_description: '', problem_statement: '', solution: '', technologies: '', github_url: '', live_demo_url: '' })
+  const [showTeam, setShowTeam] = useState(false)
+  const [teamForm, setTeamForm] = useState({ name: '', description: '', hackathon_id: '' })
+  const [inviteCode, setInviteCode] = useState('')
+  const [submissionForm, setSubmissionForm] = useState({ hackathon_id: '', team_id: '', project_name: '', project_description: '', problem_statement: '', solution: '', technologies: '', github_url: '', live_demo_url: '', artifact_ids: [] as string[] })
+  const [uploading, setUploading] = useState(false)
   const [judgeForm, setJudgeForm] = useState({ submission_id: '', score: '80', comments: '' })
 
   const loadLeaderboard = async (hackathonId: string) => {
@@ -133,6 +137,41 @@ const App = () => {
       setShowSubmit(false)
       await loadData()
     } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Unable to submit project') }
+  }
+
+  const createTeam = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!session) return
+    try {
+      await api('/api/teams', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(teamForm) }, session.token)
+      setShowTeam(false)
+      setTeamForm({ name: '', description: '', hackathon_id: '' })
+      await loadData()
+    } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Unable to create team') }
+  }
+
+  const joinTeam = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!session) return
+    try {
+      await api('/api/teams/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invite_code: inviteCode.trim() }) }, session.token)
+      setInviteCode('')
+      await loadData()
+    } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Unable to join team') }
+  }
+
+  const uploadArtifact = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !session) return
+    setUploading(true)
+    try {
+      const body = new FormData()
+      body.append('file', file)
+      const artifact = await api<{ id: string }>('/api/uploads', { method: 'POST', body }, session.token)
+      setSubmissionForm(current => ({ ...current, artifact_ids: [...current.artifact_ids, artifact.id] }))
+      setError('')
+    } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Unable to upload artifact') }
+    finally { setUploading(false) }
   }
 
   const evaluateSubmission = async (event: FormEvent) => {
@@ -216,11 +255,12 @@ const App = () => {
                 </div>}
             </>
           )}
-          {page === 'Hackathons' && <>{session.role === 'ORGANIZER' && <button className="primary-button create-inline" onClick={() => setShowCreate(true)}>+ Create hackathon</button>}{hackathons.length ? <section className="card">{hackathons.map(item => <div className="hackathon-row" key={item.id}><div><h2>{item.name}</h2><p>{item.description}</p><small>{item.status} · {item.participants} participants · {item.teams} teams</small></div><button className="secondary-button">Open</button></div>)}</section> : <EmptyState label="hackathons" />}</>}
+          {page === 'Hackathons' && <>{session.role === 'ORGANIZER' && <button className="primary-button create-inline" onClick={() => setShowCreate(true)}>+ Create hackathon</button>}{session.role === 'PARTICIPANT' && <div className="action-row"><button className="primary-button" onClick={() => setShowTeam(true)}>+ Create team</button><form onSubmit={joinTeam}><input required placeholder="Invite code" value={inviteCode} onChange={event => setInviteCode(event.target.value)} /><button className="secondary-button">Join team</button></form></div>}{hackathons.length ? <section className="card">{hackathons.map(item => <div className="hackathon-row" key={item.id}><div><h2>{item.name}</h2><p>{item.description}</p><small>{item.status} · {item.participants} participants · {item.teams} teams</small></div><button className="secondary-button">Open</button></div>)}</section> : <EmptyState label="hackathons" />}{session.role === 'PARTICIPANT' && teams.length > 0 && <section className="card team-list"><h2>Your teams</h2>{teams.map(team => <div key={team.id}><b>{team.name}</b><small>{team.invite_code ? `Invite code: ${team.invite_code}` : ''}</small></div>)}</section>}</>}
           {page === 'Submissions' && <>{session.role === 'PARTICIPANT' && <button className="primary-button create-inline" onClick={() => setShowSubmit(true)}>+ Submit project</button>}{submissions.length ? <section className="card">{submissions.map(item => <div key={item.id}><h2>{item.project_name}</h2><p>{item.team_name} · {item.status}</p><p>Score: {item.score ?? 'Not evaluated'} · Risk: {item.risk ?? 'Not analyzed'}</p></div>)}</section> : <EmptyState label="submissions" />}{(session.role === 'JUDGE' || session.role === 'ADMIN') && <form className="card inline-form" onSubmit={evaluateSubmission}><h2>Manual evaluation</h2><select required value={judgeForm.submission_id} onChange={event => setJudgeForm({ ...judgeForm, submission_id: event.target.value })}><option value="">Select a submission</option>{submissions.map(item => <option key={item.id} value={item.id}>{item.project_name}</option>)}</select><input required type="number" min="0" max="100" value={judgeForm.score} onChange={event => setJudgeForm({ ...judgeForm, score: event.target.value })} /><textarea required placeholder="Judge comments" value={judgeForm.comments} onChange={event => setJudgeForm({ ...judgeForm, comments: event.target.value })} /><button className="primary-button">Save evaluation</button></form>}</>}
           {page === 'Leaderboard' && <>{hackathons.length > 0 && <select value={leaderboardHackathonId} onChange={event => { setLeaderboardHackathonId(event.target.value); void loadLeaderboard(event.target.value) }}><option value="">Select a hackathon</option>{hackathons.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>}{leaderboard.length ? <section className="card"><h2>{hackathons.find(item => item.id === leaderboardHackathonId)?.name ?? 'Leaderboard'}</h2>{leaderboard.map(item => <div className="hackathon-row" key={`${item.rank}-${item.project}`}><div><h2>#{item.rank} · {item.project}</h2><p>{item.team} · {item.status}</p><small>Risk: {item.risk ?? 'Not analyzed'}</small></div><strong>{item.score.toFixed(1)}</strong></div>)}</section> : <EmptyState label="evaluated submissions" />}</>}
           {showCreate && <div className="modal-backdrop"><form className="modal-card" onSubmit={createHackathon}><button type="button" className="modal-close" onClick={() => setShowCreate(false)}>×</button><span className="eyebrow">HOST CONSOLE</span><h2>Create hackathon</h2><p>Set up the event details participants will see.</p><input required placeholder="Hackathon name" value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} /><textarea required placeholder="Description" value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} /><label>Registration deadline<input required type="datetime-local" value={form.registration_deadline} onChange={event => setForm({ ...form, registration_deadline: event.target.value })} /></label><div className="modal-grid"><label>Starts<input required type="datetime-local" value={form.start_date} onChange={event => setForm({ ...form, start_date: event.target.value })} /></label><label>Ends<input required type="datetime-local" value={form.end_date} onChange={event => setForm({ ...form, end_date: event.target.value })} /></label></div><button className="primary-button">Publish hackathon</button></form></div>}
-          {showSubmit && <div className="modal-backdrop"><form className="modal-card" onSubmit={createSubmission}><button type="button" className="modal-close" onClick={() => setShowSubmit(false)}>×</button><span className="eyebrow">PARTICIPANT HUB</span><h2>Submit your project</h2><select required value={submissionForm.hackathon_id} onChange={event => setSubmissionForm({ ...submissionForm, hackathon_id: event.target.value })}><option value="">Hackathon</option>{hackathons.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select><select required value={submissionForm.team_id} onChange={event => setSubmissionForm({ ...submissionForm, team_id: event.target.value })}><option value="">Team</option>{teams.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select><input required placeholder="Project name" value={submissionForm.project_name} onChange={event => setSubmissionForm({ ...submissionForm, project_name: event.target.value })} /><textarea required minLength={30} placeholder="Project description" value={submissionForm.project_description} onChange={event => setSubmissionForm({ ...submissionForm, project_description: event.target.value })} /><textarea required placeholder="Problem statement" value={submissionForm.problem_statement} onChange={event => setSubmissionForm({ ...submissionForm, problem_statement: event.target.value })} /><textarea required placeholder="Solution" value={submissionForm.solution} onChange={event => setSubmissionForm({ ...submissionForm, solution: event.target.value })} /><input required placeholder="Technologies (comma separated)" value={submissionForm.technologies} onChange={event => setSubmissionForm({ ...submissionForm, technologies: event.target.value })} /><input required type="url" placeholder="GitHub URL" value={submissionForm.github_url} onChange={event => setSubmissionForm({ ...submissionForm, github_url: event.target.value })} /><button className="primary-button">Submit project</button></form></div>}
+          {showSubmit && <div className="modal-backdrop"><form className="modal-card" onSubmit={createSubmission}><button type="button" className="modal-close" onClick={() => setShowSubmit(false)}>×</button><span className="eyebrow">PARTICIPANT HUB</span><h2>Submit your project</h2><select required value={submissionForm.hackathon_id} onChange={event => setSubmissionForm({ ...submissionForm, hackathon_id: event.target.value })}><option value="">Hackathon</option>{hackathons.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select><select required value={submissionForm.team_id} onChange={event => setSubmissionForm({ ...submissionForm, team_id: event.target.value })}><option value="">Team</option>{teams.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select><input required placeholder="Project name" value={submissionForm.project_name} onChange={event => setSubmissionForm({ ...submissionForm, project_name: event.target.value })} /><textarea required minLength={30} placeholder="Project description" value={submissionForm.project_description} onChange={event => setSubmissionForm({ ...submissionForm, project_description: event.target.value })} /><textarea required placeholder="Problem statement" value={submissionForm.problem_statement} onChange={event => setSubmissionForm({ ...submissionForm, problem_statement: event.target.value })} /><textarea required placeholder="Solution" value={submissionForm.solution} onChange={event => setSubmissionForm({ ...submissionForm, solution: event.target.value })} /><input required placeholder="Technologies (comma separated)" value={submissionForm.technologies} onChange={event => setSubmissionForm({ ...submissionForm, technologies: event.target.value })} /><input required type="url" placeholder="GitHub URL" value={submissionForm.github_url} onChange={event => setSubmissionForm({ ...submissionForm, github_url: event.target.value })} /><label>Artifact upload<input type="file" accept=".pdf,.ppt,.pptx,video/mp4,video/webm,video/quicktime" onChange={uploadArtifact} disabled={uploading} /></label>{submissionForm.artifact_ids.length > 0 && <small>{submissionForm.artifact_ids.length} artifact uploaded</small>}<button className="primary-button">Submit project</button></form></div>}
+          {showTeam && <div className="modal-backdrop"><form className="modal-card" onSubmit={createTeam}><button type="button" className="modal-close" onClick={() => setShowTeam(false)}>×</button><span className="eyebrow">PARTICIPANT HUB</span><h2>Create a team</h2><select required value={teamForm.hackathon_id} onChange={event => setTeamForm({ ...teamForm, hackathon_id: event.target.value })}><option value="">Hackathon</option>{hackathons.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select><input required minLength={3} placeholder="Team name" value={teamForm.name} onChange={event => setTeamForm({ ...teamForm, name: event.target.value })} /><textarea required minLength={5} placeholder="Team description" value={teamForm.description} onChange={event => setTeamForm({ ...teamForm, description: event.target.value })} /><button className="primary-button">Create team</button></form></div>}
         </div>
       </main>
     </div>
