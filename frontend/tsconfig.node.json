@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "composite": false,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true,
+    "lib": ["ES2020"]
+  },
+  "include": ["vite.config.ts"]
+}

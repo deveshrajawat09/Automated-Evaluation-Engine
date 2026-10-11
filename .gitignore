@@ -1,0 +1,17 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.pytest_cache/
+runner/__pycache__/
+runner/.pytest_cache/
+backend/.env
+
+# Generated uploads and local tools
+uploads/
+.DS_Store
