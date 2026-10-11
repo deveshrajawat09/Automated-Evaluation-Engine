@@ -53,7 +53,7 @@ def _json_default(value: object) -> str:
 
 
 def save_store() -> None:
-    payload = {"hackathons": hackathons, "teams": teams, "submissions": submissions, "uploads": uploads, "audit_logs": audit_logs}
+    payload = {"users": users, "hackathons": hackathons, "teams": teams, "submissions": submissions, "uploads": uploads, "audit_logs": audit_logs}
     database_url = __import__("os").getenv("DATABASE_URL", "")
     if database_url.startswith(("postgres://", "postgresql://", "postgresql+")):
         save_database_state(json.loads(json.dumps(payload, default=_json_default)))
@@ -68,6 +68,7 @@ def load_store() -> None:
     )
     if not payload:
         return
+    users.update(payload.get("users", {}))
     hackathons.update(payload.get("hackathons", {}))
     teams.update(payload.get("teams", {}))
     submissions.update(payload.get("submissions", {}))

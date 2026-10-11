@@ -42,14 +42,14 @@ Open the dashboard at `http://localhost:5173` and API docs at `http://localhost:
 
 ### Demo accounts
 
-All seeded accounts use password `DemoPass123!`:
-
 | Role | Email |
 | --- | --- |
-| Organizer | organizer@hackeval.local |
-| Judge | judge@hackeval.local |
-| Participant | participant@hackeval.local |
-| Admin | admin@hackeval.local |
+| Organizer | host@hackeval.ai |
+| Judge | judge@hackeval.ai |
+| Participant | participant@hackeval.ai |
+| Admin | admin@hackeval.ai |
+
+Demo passwords are defined in `backend/app/store.py` for local development.
 
 ## Evaluation safety and transparency
 
@@ -57,8 +57,24 @@ Scores and fraud signals are decision support, not automatic decisions. Every ev
 
 ## Next implementation steps
 
-1. Replace the in-memory demo store with SQLAlchemy models and Alembic migrations against the included PostgreSQL service.
+1. Run the relational database migration with `cd backend; alembic upgrade head` before starting a PostgreSQL-backed deployment.
 2. Add a GitHub API adapter using `GITHUB_TOKEN` and permission-scoped requests.
 3. Plug an approved LLM provider into the evaluation service through `AI_API_KEY`.
 4. Deploy the sandbox as a separate rootless-container service; do not attach the backend to a host Docker socket.
 5. Add file object storage and asynchronous task processing for pitch/video extraction.
+
+### PostgreSQL migrations
+
+Set `DATABASE_URL` to the PostgreSQL connection string and apply the schema before
+starting the API:
+
+```powershell
+cd backend
+$env:DATABASE_URL = "postgresql+psycopg://hackeval:hackeval@localhost:5432/hackeval"
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
+```
+
+The relational schema stores users, hackathons, teams, submissions, uploads, and
+audit logs in separate tables. The existing JSON file remains the local fallback
+when `DATABASE_URL` is not configured.
