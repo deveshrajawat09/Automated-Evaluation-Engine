@@ -9,6 +9,7 @@ app = FastAPI(
     version="0.1.0",
     description="Explainable hackathon management, project evaluation, and risk-review APIs.",
 )
+settings.validate()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.allowed_origins),
@@ -21,6 +22,16 @@ app.include_router(hackathons.router, prefix=settings.api_prefix)
 app.include_router(teams.router, prefix=settings.api_prefix)
 app.include_router(submissions.router, prefix=settings.api_prefix)
 app.include_router(dashboard.router, prefix=settings.api_prefix)
+
+
+@app.get("/", tags=["Health"])
+def root() -> dict[str, str]:
+    return {
+        "service": "hackeval-ai-api",
+        "status": "ok",
+        "docs": "/docs",
+        "health": "/health",
+    }
 
 
 @app.get("/health", tags=["Health"])

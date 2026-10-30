@@ -14,22 +14,91 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app_net
+
+  cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_net
+
+  backend:
+    build: ./backend
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://hackeval:hackeval@database:5432/hackeval
+      REDIS_URL: redis://cache:6379/0
+      SANDBOX_RUNNER_URL: http://runner:8080
+      SANDBOX_RUNNER_TOKEN: local-runner-token
+      JWT_SECRET: local-development-secret-change-me
+      ALLOWED_ORIGINS: http://localhost:5173
+      UPLOAD_DIR: /app/uploads
+    ports:
+      - "8000:8080"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+      runner:
+        condition: service_started
+    networks:
+      - app_net
+      - runner_net
 
   runner:
     build: ./runner
     read_only: true
     cap_drop: ["ALL"]
     security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
     tmpfs:
-      - /tmp:noexec,nosuid,size=64m
+      - /tmp:nosuid,nodev,size=64m
+    volumes:
+      - ./backend/uploads:/sandbox-inputs:ro
+    environment:
+      SANDBOX_RUNNER_TOKEN: local-runner-token
     networks:
+      - app_net
       - runner_net
     expose:
       - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/docs')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:8080"
+    depends_on:
+      backend:
+        condition: service_started
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
+  app_net:
   runner_net:
     internal: true

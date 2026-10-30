@@ -128,7 +128,7 @@ class EvaluationRequest(BaseModel):
 class SandboxRunRequest(BaseModel):
     language: Literal["python", "javascript", "java", "cpp"]
     source_archive_id: str = Field(min_length=3, max_length=200)
-    tests: list[dict] = Field(default_factory=list, max_length=50)
+    tests: list[dict] = Field(min_length=1, max_length=50)
 
 
 class TextAnalysisRequest(BaseModel):

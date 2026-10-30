@@ -1,6 +1,183 @@
 {
-  "hackathons": {},
-  "teams": {},
+  "users": {
+    "participant-user": {
+      "id": "participant-user",
+      "name": "Participant User",
+      "email": "participant@hackeval.ai",
+      "role": "PARTICIPANT",
+      "password_hash": "$2b$12$0hntcmJPGeD6UJpoXobfoegfOo1I3NO.0Je7glfL9KMb1fp3mv5QW"
+    },
+    "admin-host-user": {
+      "id": "admin-host-user",
+      "name": "Admin Host",
+      "email": "host@hackeval.ai",
+      "role": "ORGANIZER",
+      "password_hash": "$2b$12$JrIHWrvuInQELEmz/2sclORnny8CKMT5J1e8X7Rtp5D5K3SiM4WNq"
+    },
+    "judge-user": {
+      "id": "judge-user",
+      "name": "Judge User",
+      "email": "judge@hackeval.ai",
+      "role": "JUDGE",
+      "password_hash": "$2b$12$vf2uq516GBa8SC/T1LAtvu9bNSuDwCL6rl8RgvaoWWJUnH62sH/Ue"
+    },
+    "admin-user": {
+      "id": "admin-user",
+      "name": "Platform Admin",
+      "email": "admin@hackeval.ai",
+      "role": "ADMIN",
+      "password_hash": "$2b$12$l8BqspeeL9z2U1zKATxdleQtPTPr0COytFeXg6y0LN6Z7Jk5vBnUe"
+    }
+  },
+  "hackathons": {
+    "315edaf9-e30b-497c-8871-6bc5ecae4204": {
+      "id": "315edaf9-e30b-497c-8871-6bc5ecae4204",
+      "name": "AI World",
+      "description": "AI world take a new relictstoio ",
+      "status": "UPCOMING",
+      "participants": 0,
+      "teams": 1,
+      "submissions": 0,
+      "start_date": "2026-10-23T10:54:00+00:00",
+      "end_date": "2026-10-26T10:55:00+00:00",
+      "registration_deadline": "2026-10-22T10:53:00+00:00",
+      "max_participants": 500,
+      "max_team_size": 5,
+      "rules": "Build an original project and document all external APIs.",
+      "rubric": [
+        {
+          "criterion": "Innovation",
+          "weight": 25.0
+        },
+        {
+          "criterion": "Functionality",
+          "weight": 25.0
+        },
+        {
+          "criterion": "Impact",
+          "weight": 25.0
+        },
+        {
+          "criterion": "Presentation",
+          "weight": 25.0
+        }
+      ]
+    },
+    "7b1d6f04-0352-43c4-9329-d7c265cfd52c": {
+      "id": "7b1d6f04-0352-43c4-9329-d7c265cfd52c",
+      "name": "ai tech world",
+      "description": "ai descrived the ai the new world",
+      "status": "UPCOMING",
+      "participants": 0,
+      "teams": 1,
+      "submissions": 0,
+      "start_date": "2026-11-25T06:25:00+00:00",
+      "end_date": "2026-11-28T06:26:00+00:00",
+      "registration_deadline": "2026-11-24T06:25:00+00:00",
+      "max_participants": 500,
+      "max_team_size": 5,
+      "rules": "Build an original project and document all external APIs.",
+      "rubric": [
+        {
+          "criterion": "Innovation",
+          "weight": 25.0
+        },
+        {
+          "criterion": "Functionality",
+          "weight": 25.0
+        },
+        {
+          "criterion": "Impact",
+          "weight": 25.0
+        },
+        {
+          "criterion": "Presentation",
+          "weight": 25.0
+        }
+      ]
+    }
+  },
+  "teams": {
+    "a93737a7-07c0-42cf-943c-d56c2c44859d": {
+      "id": "a93737a7-07c0-42cf-943c-d56c2c44859d",
+      "name": "MIDNIGT CODE",
+      "description": "kjdsgfugygwgqw",
+      "hackathon_id": "315edaf9-e30b-497c-8871-6bc5ecae4204",
+      "leader_id": "participant-user",
+      "members": [
+        "participant-user"
+      ],
+      "invite_code": "92E3FF1E"
+    },
+    "7718b54a-384d-4e04-8cc3-b76eea9860a2": {
+      "id": "7718b54a-384d-4e04-8cc3-b76eea9860a2",
+      "name": "hello world",
+      "description": "jenfqpwjfjqw",
+      "hackathon_id": "7b1d6f04-0352-43c4-9329-d7c265cfd52c",
+      "leader_id": "participant-user",
+      "members": [
+        "participant-user"
+      ],
+      "invite_code": "BF55C9D3"
+    }
+  },
   "submissions": {},
-  "audit_logs": []
+  "uploads": {
+    "3e9a2ab0-a66b-4194-99e3-33662f87a818": {
+      "id": "3e9a2ab0-a66b-4194-99e3-33662f87a818",
+      "owner_id": "participant-user",
+      "filename": "Report_Format_Final.pdf",
+      "content_type": "application/pdf",
+      "size": 2118827,
+      "path": "uploads\\3e9a2ab0-a66b-4194-99e3-33662f87a818.pdf",
+      "status": "UPLOADED"
+    }
+  },
+  "audit_logs": [
+    {
+      "id": "003de459-bb4e-4628-a2b0-17941d95f7e7",
+      "actor_id": "admin-host-user",
+      "action": "CREATE",
+      "entity_type": "hackathon",
+      "entity_id": "315edaf9-e30b-497c-8871-6bc5ecae4204",
+      "details": "Created AI World",
+      "created_at": "2026-10-20T10:54:48.549011+00:00"
+    },
+    {
+      "id": "2f5f9444-dd2d-488b-b9eb-97dd23333642",
+      "actor_id": "participant-user",
+      "action": "CREATE",
+      "entity_type": "team",
+      "entity_id": "a93737a7-07c0-42cf-943c-d56c2c44859d",
+      "details": "Created team MIDNIGT CODE",
+      "created_at": "2026-10-20T10:55:31.051425+00:00"
+    },
+    {
+      "id": "922b7cc3-9bb0-4f47-bc16-cc06f09aee43",
+      "actor_id": "admin-host-user",
+      "action": "CREATE",
+      "entity_type": "hackathon",
+      "entity_id": "7b1d6f04-0352-43c4-9329-d7c265cfd52c",
+      "details": "Created ai tech world",
+      "created_at": "2026-10-30T06:26:26.647742+00:00"
+    },
+    {
+      "id": "15b0df89-da7f-47ec-9c99-9a714e7600d7",
+      "actor_id": "participant-user",
+      "action": "CREATE",
+      "entity_type": "team",
+      "entity_id": "7718b54a-384d-4e04-8cc3-b76eea9860a2",
+      "details": "Created team hello world",
+      "created_at": "2026-10-30T06:27:16.613750+00:00"
+    },
+    {
+      "id": "5ec698d1-1e69-4892-8627-dfbccf6a356d",
+      "actor_id": "participant-user",
+      "action": "UPLOAD",
+      "entity_type": "artifact",
+      "entity_id": "3e9a2ab0-a66b-4194-99e3-33662f87a818",
+      "details": "Uploaded Report_Format_Final.pdf",
+      "created_at": "2026-10-30T07:47:48.617296+00:00"
+    }
+  ]
 }

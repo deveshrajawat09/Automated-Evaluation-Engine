@@ -12,28 +12,26 @@ from app.services.evaluation import evaluate_submission
 from app.services.fraud import create_fraud_report
 from app.services.repository import analyze_repository
 from app.services.sandbox import SandboxUnavailable, run_in_isolated_runner
-from app.core.config import settings
+from app.services.storage import upload_artifact as store_artifact
 from app.store import audit, save_store, submissions, teams, uploads
 
 router = APIRouter(tags=["Submissions & Evaluation"])
-ALLOWED_UPLOAD_TYPES = {"application/pdf", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "video/mp4", "video/webm", "video/quicktime"}
+ALLOWED_UPLOAD_TYPES = {"application/pdf", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "video/mp4", "video/webm", "video/quicktime", "text/plain", "text/x-python", "application/javascript", "text/javascript", "text/x-java-source", "text/x-c++src"}
+SOURCE_UPLOAD_TYPES = {"text/plain", "text/x-python", "application/javascript", "text/javascript", "text/x-java-source", "text/x-c++src"}
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
 
 @router.post("/uploads", status_code=status.HTTP_201_CREATED)
 async def upload_artifact(file: UploadFile = File(...), user: Annotated[dict, Depends(require_roles(Role.PARTICIPANT))] = None) -> dict:
     if file.content_type not in ALLOWED_UPLOAD_TYPES:
-        raise HTTPException(status_code=415, detail="Only PDF, PPT/PPTX, MP4, WebM, and MOV files are supported")
+        raise HTTPException(status_code=415, detail="Only PDF, PPT/PPTX, MP4, WebM, MOV, and supported source-text files are allowed")
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="Upload exceeds the 100 MB limit")
     upload_id = str(uuid4())
     extension = Path(file.filename or "artifact.bin").suffix.lower()
-    target_dir = Path(settings.upload_dir)
-    target_dir.mkdir(parents=True, exist_ok=True)
-    target = target_dir / f"{upload_id}{extension}"
-    target.write_bytes(content)
-    record = {"id": upload_id, "owner_id": user["id"], "filename": file.filename or "artifact", "content_type": file.content_type, "size": len(content), "path": str(target), "status": "UPLOADED"}
+    artifact_path = store_artifact(upload_id, content, extension)
+    record = {"id": upload_id, "owner_id": user["id"], "filename": file.filename or "artifact", "content_type": file.content_type, "size": len(content), "path": artifact_path, "status": "UPLOADED"}
     uploads[upload_id] = record
     save_store()
     audit(user["id"], "UPLOAD", "artifact", upload_id, f"Uploaded {record['filename']}")
@@ -90,8 +88,13 @@ def code_analysis(payload: RepositoryAnalysisRequest, user: Annotated[dict, Depe
 
 @router.post("/sandbox/run")
 async def sandbox_run(payload: SandboxRunRequest, user: Annotated[dict, Depends(require_roles(Role.ORGANIZER, Role.JUDGE, Role.ADMIN))]) -> dict:
+    source = uploads.get(payload.source_archive_id)
+    if not source:
+        raise HTTPException(status_code=404, detail="Source artifact not found")
+    if source["content_type"] not in SOURCE_UPLOAD_TYPES:
+        raise HTTPException(status_code=422, detail="Sandbox execution requires a supported source-code artifact")
     try:
-        return await run_in_isolated_runner(payload.language, payload.source_archive_id, payload.tests)
+        return await run_in_isolated_runner(payload.language, Path(source["path"]).name, payload.tests)
     except SandboxUnavailable as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 

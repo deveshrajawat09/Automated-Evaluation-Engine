@@ -14,4 +14,10 @@ backend/.env
 
 # Generated uploads and local tools
 uploads/
+backend/uploads/
+backend/hackeval-data.json
+backend/hackeval-local.db
+infra/gcp/.terraform/
+infra/gcp/terraform.tfstate*
+infra/gcp/terraform.tfvars
 .DS_Store
